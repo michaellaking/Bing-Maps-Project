@@ -1,0 +1,59 @@
+@media screen and (min-width: 320px) and (max-width: 767px) {
+    #navContainer {
+        margin-bottom: 0;
+    }
+    #containerDirections {
+        position: absolute;
+        width: 100%;
+        height: 50%;
+        background:rgba(255,255,255,0.8);
+        left: 0; 
+        bottom: 0;
+        overflow-y: auto;
+        visibility: hidden;
+    }
+    #containerReviews {
+        position: absolute;
+        width: 100%;
+        height: 50%;
+        background:rgba(255,255,255,0.8);
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
+        visibility: hidden;
+    }    
+
+    #containerReviews h4 {
+        text-align: center;
+        font-weight: bold;
+    }    
+    #displayReviews {
+        position: absolute;
+        width: 200px;
+        height: 50%;
+        background:rgba(255,255,255,0.8);
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
+        visibility: hidden;
+    }    
+
+    #displayReviews h4 {
+        text-align: center;
+        font-weight: bold;
+    }    
+    #close{
+        height: auto;
+        width: 100%;
+        background-color: black;
+        color: white;
+    }    
+    #hidden {
+        visibility: hidden;
+    }
+
+    .img-small {
+        width: 40px;
+    }
+}
+

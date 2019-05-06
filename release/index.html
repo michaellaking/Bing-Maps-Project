@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<!--
+/**
+ * Author:  Michael Laking
+ * ID:      000775971
+ * 
+ * This is solely my work.
+ * 
+ */
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Project Beta</title>
+        <script type='text/javascript' src='https://www.bing.com/api/maps/mapcontrol?key=An99UCFjPjmQt4O52JSNM3OtiR3S2CgSydI1dPD-ru26Jw-S972tO-4znmEBX5gW'></script>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="css/indexCSS.css">
+        <link rel="stylesheet" href="css/mobile.css">
+
+    </head>
+    <body>
+        <nav id="navContainer" class="navbar navbar-inverse dropdown">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a id="niagaraBrand" class="navbar-brand" href="#">Niagara Wineries</a>
+                    <button type="button" id="resetMap" class="btn navbar-btn">Reset Map</button>
+                </div> 
+
+                
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="myNavbar">
+                    <ul class="nav navbar-nav navbar-left">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="addWinery.html">Add a Winery</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="#myModal" data-toggle = "modal" data-target= "#myModal">About us</a></li>
+                    </ul>                    
+                    <form class="navbar-form navbar-right">
+                        <div class="form-group">
+                            <input id="inputSearch" type="text" class="form-control" placeholder="">
+                            <select id="searchBy" class="form-control">
+                                <option value="byName">By Name</option>
+                                <option value="byDistance">By Distance</option>
+                            </select>
+                        </div>
+                        <button id="btnSearch" type="submit" class="btn btn-default">Search</button>
+                    </form>
+                </div><!-- /.navbar-collapse -->
+
+            </div><!-- /.container-fluid -->
+        </nav>
+        
+        <div id="myMap" class="container" style='width: 100vw; height: 95vh;'></div>
+        <div id="containerDirections" class="container-fluid"></div>
+
+        <div id="containerReviews" class="container-fluid">
+            <h4 id="wineryName">Placeholder</h4>
+            <h6 id="isReviews">Placeholder</h6>
+            <form id="formReview" class="form-horizontal">
+                <div id="hidden" class="form-group">
+                    <label for="wineryID" class="control-label">ID</label>
+                        <input type="text" class="form-control" id="wineryID" name="wineryID">
+                </div>                
+                <div id="ratingDiv">
+                    <label for="userRating" class="col-sm-4 control-label">Rating</label> 
+                    <div class="col-sm-6">
+                    <select id="userRating" class="form-control" name="userRating">
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                    </select>  
+                </div>
+                    <br>
+                    <br>
+                </div>
+                <div id="userNameDiv" class="form-group">
+                    <label for="userName" class="col-sm-4 control-label">Name:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="userName" name="userName" />
+                    </div>
+                </div>
+                <div id="userEmailDiv" class="form-group">
+                    <label for="userEmail" class="col-sm-4 control-label">Email:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="userEmail" name="userEmail"/>
+                    </div>
+                </div>  
+                <div id="userReviewDiv" class="form-group">
+                    <label for="userReview" class="col-sm-4 control-label">Review:</label>
+                    <div class="col-sm-8">
+                        <textarea class="form-control" rows="3" id="userReview" name="userReview"></textarea>                                 
+                    </div>
+                </div>
+                <div class="col-sm-12 pull-right"></div>
+                <button type="submit" class="btn btn-primary" id="btnSubmit" value="Submit">Submit</button>
+                <br>
+                <br>
+            </form>
+            <button id="close" type="button" class="btn btn-block" >Close</button>
+            
+        </div>
+        <div id="displayReviews" class="container-fluid"></div>
+
+<div class="modal fade" id="myModal">
+    <div class="modal-dialog">
+        <div class="modal-content"> 
+            <div class="modal-header">
+                <h5 class="modal-title">For your Queries</h5> 
+            </div>
+            <div class="modal-body">
+                The Niagara Wineries application is a directory of all wineries in the Niagara Region. Users can quickly search for a winery either by name or for wineries within 15Kms of a searched location. Additionally, users may leave a review or get directions to their favourite wineries. If your favourite winery is missing from our collection please use the Add Winery feature on the Navbar to provide details so we can add it!
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss = "modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>  
+        <script type="text/javascript">
+            var map, pin, infobox, userPin, userLocation, directionsManager, searchManager, searchLocation;
+            var wineriesArray, reviewsArray;
+            var tooltipTemplate = '<div style="background-color:white;height:auto;width:auto;padding:5px;text-align:center"><b>{title}</b></div>';  
+            
+            function clearPushPins() {
+                for (var i = map.entities.getLength() - 1; i >= 0; i--) {
+                    var pushpin = map.entities.get(i);
+                    if (pushpin instanceof Microsoft.Maps.Pushpin) {
+                        map.entities.removeAt(i);
+                    }
+                }
+            };
+            
+            
+            
+            /**
+             * When the universal close button is clicked, all divs currently displayed are set to hidden using
+             * the clearDivs() function
+             * @returns {undefined}
+             */
+            $(document).on('click', '#close', function() {
+                clearDivs();
+            });
+    
+            /**
+             * This function sets all 3 divs visibility to hidden
+             * @returns {undefined}
+             */
+            function clearDivs() {
+                $("#containerDirections").css("visibility", "hidden");
+                $("#containerReviews").css("visibility", "hidden");
+                $("#displayReviews").css("visibility", "hidden");
+            }
+            
+            /**
+             * This function will clear all divs, then display a form for the
+             * user to add a review based on if they have been brought to the
+             * form because no reviews existed or they chose to add a review
+             * @param {type} id : id of the Winery being displayed
+             * @param {type} isReviews - boolean if any reviews for Winery exist
+             * @returns {undefined}
+             */
+            function showReviews(id, isReviews) {
+                clearDivs();
+                $("#displayReviews").css("visibility", "hidden");
+                $("#containerReviews").css("visibility", "visible");
+                $("#wineryName").text(wineriesArray[id].Name);
+                $("#wineryID").val(id);
+                $("#isReviews").text("");
+                if ( isReviews == 0 ) {
+                $("#wineryName").text(wineriesArray[id].Name);
+                $("#wineryID").val(id);
+                $("#isReviews").text("No reviews have been made. Please feel free to be the first!");
+                }
+            };
+
+            /**
+             * The getReviews(id) function uses a POST ajax call to the getReviews.php
+             * file to grab all reviews for the selected Winery from the phpMyAdmin database
+             * Once the array has been returned, the data is parsed and used to display
+             * within the displayReviews div. If no reviews have been made, the user
+             * is displayed with the add a review form using the showReviews() function
+             * @type Element : id of the Winery to be searched for
+             */
+            function getReviews(id) {
+                var winery_ID = id;
+                   $.ajax({
+                       type: "POST",
+                       url: "getReviews.php",
+                       data: { wineryID: winery_ID },
+                       success: function(data) {
+                           if ( data != 0 ) {
+                               reviewsArray = $.parseJSON(data);
+                               $("#containerReviews").css("visibility", "hidden");
+                               $("#displayReviews").css("visibility", "visible");
+                               var mediaObject = "<h4>" + wineriesArray[id].Name + "</h4>";
+                               for ( var i = 0; i < reviewsArray.length; i++ ) {
+                                   mediaObject += '<li class="media">';
+                                   mediaObject += '<div class=media-body media-left"> <h6 class="media-heading"<strong>' + reviewsArray[i].userName + '</strong</h6>';
+                                   mediaObject += '<p class="small">' + reviewsArray[i].userEmail + '<br>';
+                                   mediaObject += '<img class="img-small" src="imgs/small_' + reviewsArray[i].userRating + '.png"> <br>';
+                                   mediaObject += reviewsArray[i].userReview + '</p>';
+                                   mediaObject += '</div></li>';
+                                                    
+                               }
+                               mediaObject += '<a href=# onclick="showReviews(' + id + ',1)">Add A Review!</a>';
+                               mediaObject += "<button id='close' type='button' class='btn btn-block'>Close</button";
+                               
+                               $("#displayReviews").html(mediaObject);
+                           }
+                           else {
+                               showReviews(id, 0);
+                           }   
+                       }
+                   });
+               };
+
+            /**
+             * The getDirections(id) function makes use of a directionsManager from bing maps.
+             * It will add the users currently location as a waypoint, and the selected Winery
+             * as a second waypoint, calculate the directions and display these directions to the
+             * user in the containerDirections div.
+             * @param {type} id : id of the selected Winery
+             * @returns {undefined}
+             */
+            function getDirections(id) {
+                clearPushPins();
+                
+                
+                    
+                $("#containerReviews").css("visibility", "hidden");
+                $("#displayReviews").css("visibility", "hidden");
+                $("#containerDirections").css("visibility", "visible");
+
+                directionsManager.clearAll();
+                var userWaypoint = new Microsoft.Maps.Directions.Waypoint ({ address: 'User Location', location: userLocation });
+                directionsManager.addWaypoint(userWaypoint);
+                
+                var destinationWaypoint = new Microsoft.Maps.Directions.Waypoint ({ address: wineriesArray[id].FullAddress, location: new Microsoft.Maps.Location( wineriesArray[id].Latitude, wineriesArray[id].Longitude)});
+                directionsManager.addWaypoint(destinationWaypoint);
+                
+                directionsManager.setRenderOptions({ drivingPolylineOptions: { strokeColor: 'blue', strokeThickness: 6 }, itineraryContainer: "#containerDirections"});
+
+                directionsManager.calculateDirections();
+                $("#containerDirections").append("<button id='close' type='button' class='btn btn-block'>Close</button");
+        };
+        
+            /**
+             * the btnSubmit.click Function is used to send a POST request to
+             * the send.php file. It's default action is prevented and the values
+             * within the form are then sent to the phpMyAdmin database to store
+             * the users reviews.
+             */
+            $("#btnSubmit").click(function(e) {
+                e.preventDefault();
+                var wineryID = $("#wineryID").val();
+                var userRating = $("#userRating").val();
+                var userName = $("#userName").val();
+                var userReview = $("#userReview").val();
+                var userEmail = $("#userEmail").val();
+                $.post ( "send.php",
+                {
+                    wineryID: wineryID,
+                    userName: userName,
+                    userEmail: userEmail,
+                    userRating: userRating,
+                    userReview: userReview
+                }, function (data) {
+                    if ( data == 1 ) {
+                        console.log (data);
+                    }
+                });
+                clearDivs();
+            });        
+        
+            
+            $(document).ready(function () {
+                /**
+                 * When the window is loaded this function initializes and creates the Bing Map and
+                 * a default infobox. Additionally, the method sets the contents of
+                 * the jsonData div. The method also calls upon the allPushPins() method
+                 * which populates the map with all pushpins according to their locations as
+                 * well the method calls the getUserLocation() method which will place a
+                 * pushpin at their location. Additionally, the directionsManager module is loaded
+                 * as well as the searchManager module.
+                 * @returns {undefined}
+                 */
+                window.onload = function () {
+
+                    var center = new Microsoft.Maps.Location(43.2551, -79.0715);
+                    map = new Microsoft.Maps.Map(document.getElementById('myMap'), {
+                        center: center
+                    });
+                    
+
+                    Microsoft.Maps.loadModule('Microsoft.Maps.Directions', function() {
+                        directionsManager = new Microsoft.Maps.Directions.DirectionsManager(map);
+                    });
+                    
+                    Microsoft.Maps.loadModule('Microsoft.Maps.Search', function () {
+                    searchManager = new Microsoft.Maps.Search.SearchManager(map);
+                    });
+                    
+                    Microsoft.Maps.loadModule('Microsoft.Maps.SpatialMath', function() {
+                    mathManager = new Microsoft.Maps.SpatialMath(map);
+                    });
+                    
+                    infobox = new Microsoft.Maps.Infobox(map.getCenter(), {
+                        visible: false
+                    });
+                    
+                    //Create an infobox to use as a tooltip when hovering.
+                    tooltip = new Microsoft.Maps.Infobox(map.getCenter(), {
+                        visible: false,
+                        showPointer: false,
+                        showCloseButton: false,
+                        offset: new Microsoft.Maps.Point(-75, 10)
+                    });
+                    tooltip.setMap(map);
+                    infobox.setMap(map);
+                    getUserLocation();
+                    for (var i = 0; i < wineriesArray.length; i++ ) {
+                        allPushPins(i);
+                    }
+                };
+
+                /**
+                * The getUserLocation() will ask the user for their Location data,
+                * if the user accepts, the success function is called which will
+                * create a pushpin and infobox at their location and display a message
+                * with their Latitude and Longitude.
+                * @returns {undefined}
+                */
+                function getUserLocation() {
+                    function success(position) {
+                        userLocation = new Microsoft.Maps.Location(
+                                position.coords.latitude,
+                                position.coords.longitude);
+
+                        userPin = new Microsoft.Maps.Pushpin(userLocation, {
+                            icon: 'https://www.bingmapsportal.com/Content/images/poi_custom.png'
+                        });
+
+                        userPin.metadata = {
+                            title: "Current Location"
+                        };
+                        Microsoft.Maps.Events.addHandler(userPin, 'click', pushpinClicked);
+                        map.entities.push(userPin);
+                        map.setView ({ center: userLocation, zoom: 8 });
+                    };
+                    navigator.geolocation.getCurrentPosition(success);
+                };
+                
+
+                function pushpinHovered(e) {
+                    //Hide the infobox
+                    infobox.setOptions({ visible: false });
+
+                    //Make sure the infobox has metadata to display.
+                    if (e.target.metadata) {
+                        //Set the infobox options with the metadata of the pushpin.
+                        tooltip.setOptions({
+                            location: e.target.getLocation(),
+                            htmlContent: tooltipTemplate.replace('{title}', e.target.metadata.title),
+                            visible: true
+                        });
+                    }
+                }
+
+                
+                function closeTooltip() {
+                    //Close the tooltip.
+                    tooltip.setOptions({
+                        visible: false
+                    });
+                }
+
+                /**
+                * The pushpinClicked(e) method retrieves the metadata for each pushpin
+                * which has been clicked and creates an infobox at that location with a
+                * Title, and Description and sets the infobox visible to true.
+                * @param {type} e
+                * @returns {undefined}
+                */
+                function pushpinClicked(e) {
+                    if (e.target.metadata) {
+                        infobox.setOptions({
+                            maxHeight: 600,
+                            maxWidth: 400,
+                            location: e.target.getLocation(),
+                            title: e.target.metadata.title,
+                            description: e.target.metadata.description,
+                            visible: true
+                        });
+                    }
+                };
+                
+                /**
+                 * The allPushPins() method makes use of a for loop to cycle through the
+                 * wineriesArray. It retrievese the latitude and longitude and sets
+                 * the pushpins location at these coordinates. The metadata is also retrieved
+                 * from the array and added to each pushpin. Once all data has been
+                 * added, they are pushed to the map.
+                 * @returns {undefined}
+                 */
+                
+                /**
+                 * 
+                 * @param {type} pinNumber
+                 *  The pinNumber is the ID of a given Winery in the Niagara Region.
+                 * @returns {undefined}
+                 */
+                function allPushPins(pinNumber) {
+                        var location = new Microsoft.Maps.Location(wineriesArray[pinNumber].Latitude, wineriesArray[pinNumber].Longitude);
+
+                        var pin = new Microsoft.Maps.Pushpin(location, {
+                            color: 'purple',
+                            size: 10
+                        });
+                        pin.metadata = {
+                            title: wineriesArray[pinNumber].Name,
+                            description: "Municipality: " + wineriesArray[pinNumber].Municipality + "<br>" +
+                                    "Phone: " + wineriesArray[pinNumber].Phone + "<br>" +
+                                    "<a href=" + wineriesArray[pinNumber].URL + ">View Website</a>" + "<br><br>" +
+                                    "<a href=# id='review" + pinNumber + "' class='reviewBtn' onclick='getReviews("+pinNumber+")'>Reviews</a> " + " <a href=# onclick='getDirections("+pinNumber+")'>Directions</a>"
+                        };
+                        map.entities.push(userPin);
+                        Microsoft.Maps.Events.addHandler(pin, 'click', pushpinClicked);
+                        Microsoft.Maps.Events.addHandler(pin, 'mouseover', pushpinHovered);
+                        Microsoft.Maps.Events.addHandler(pin, 'mouseout', closeTooltip);
+
+                        map.entities.push(pin);
+                    
+                };
+                
+
+                $("#resetMap").click(function() {
+                    map.entities.push(userPin);
+                    clearDivs();
+                    directionsManager.clearAll();
+                    clearPushPins();
+                    for ( var i = 0; i < wineriesArray.length; i++ ) {
+                        allPushPins(i);
+                    }
+                });
+                
+                
+                
+                /**
+                 * The btnSearch.click Function takes in the value the user has
+                 * provided in the search bar and uses the searchManager to find
+                 * this location and place a pin at it's current location.
+                 */
+                $("#btnSearch").click(function(e) {                    
+                    var query = $('#inputSearch').val();   
+                    var searchBy = $('#searchBy').val();
+                    e.preventDefault();
+                    var searchRequest = {
+                        where: query,
+                        callback: function (r) {
+                            //Add the first result to the map and zoom into it.
+                           if ( searchBy == "byDistance") {
+                            if (r && r.results && r.results.length > 0) {
+                                var pin = new Microsoft.Maps.Pushpin(r.results[0].location, {
+                                color: 'red',  
+                                size: 10
+                            });
+                            
+                                clearPushPins();
+                                map.entities.push(pin);
+                                
+                                for ( var i = 1; i < wineriesArray.length; i++ ) {
+                                    var location = new Microsoft.Maps.Location(wineriesArray[i].Latitude, wineriesArray[i].Longitude);
+                                    var pushpins = new Microsoft.Maps.Pushpin(location);                                    
+                                    var b = Microsoft.Maps.SpatialMath.getDistanceTo(pin.getLocation(), pushpins.getLocation(), Microsoft.Maps.SpatialMath.DistanceUnits.Kilometers);
+                                    
+                                    console.log(b);
+                                    if ( b <= 15 ) {
+                                        allPushPins(i);
+                                    }
+                                }
+
+                                map.setView({ bounds: r.results[0].bestView });
+                            }
+                        }
+                        else if ( searchBy == "byName" ){
+                           clearPushPins();
+                           map.entities.push(userPin);
+                           for ( var i = 0; i < wineriesArray.length; i++ ) {
+                               var temp = wineriesArray[i].Name.toString();
+                               var search = query.toString().toLowerCase();
+                               temp = temp.toLowerCase();
+                               var check = temp.includes(search);
+                               
+                               
+                                if ( check == true ) {     
+                                    allPushPins(i);
+                                }     
+                                
+                           }
+                        }},
+                        errorCallback: function (e) {
+                            //If there is an error, alert the user about it.
+                            alert("No results found.");
+                        }
+                    };
+                    //Make the geocode request.
+                    searchManager.geocode(searchRequest);
+                });
+
+
+            /**
+             * The clearPushPins() method makes use of a for loop which will
+             * remove all pushpins currently on the Bing Map.
+             * @returns {undefined}             
+             */
+            function clearPushPins() {
+                for (var i = map.entities.getLength() - 1; i >= 0; i--) {
+                    var pushpin = map.entities.get(i);
+                    if (pushpin instanceof Microsoft.Maps.Pushpin) {
+                        map.entities.removeAt(i);
+                    }
+                }
+            };
+    
+                /**
+                 * wineriesArray taken from 
+                 * https://niagaraopendata.ca/dataset/wineries/resource/dc124472-5528-4f27-a6ad-b694e01c9d1a
+                 * I was unable to properly parse this data from the .csv file and opted to copy
+                 * the entire array to the file. This is something I wish to learn how to do
+                 * better in the future.
+                 */
+                wineriesArray = [
+                    {
+                        "Name": "Wayne Gretzky Estates Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "",
+                        "URL": "http://www.gretzkyestateswines.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1347612185057",
+                        "Latitude": "43.2114023303617"
+                    },
+                    {
+                        "Name": "Westcott Vineyards",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-7517",
+                        "URL": "https://www.westcottvineyards.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3580610290108",
+                        "Latitude": "43.1196476690341"
+                    },
+                    {
+                        "Name": "Flat Rock Cellars",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-8994",
+                        "URL": "http://www.flatrockcellars.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3607971752918",
+                        "Latitude": "43.1295019729987"
+                    },
+                    {
+                        "Name": "Le Clos Jordane",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 468-4637",
+                        "URL": "http://www.leclosjordanne.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3529344788179",
+                        "Latitude": "43.1782840218398"
+                    },
+                    {
+                        "Name": "Two Sisters Vineyards",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-0592",
+                        "URL": "http://www.twosistersvineyards.com/site/home",
+                        "FullAddress": "",
+                        "Longitude": "-79.0685899762637",
+                        "Latitude": "43.2410990323862"
+                    },
+                    {
+                        "Name": "Cattail Creek Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 988-9463",
+                        "URL": "http://www.cattailcreek.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1359009088785",
+                        "Latitude": "43.2010657848562"
+                    },
+                    {
+                        "Name": "Icellars Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(289) 479-5969",
+                        "URL": "http://www.icellars.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1209008191204",
+                        "Latitude": "43.1732665993595"
+                    },
+                    {
+                        "Name": "The Hare Wine Co.",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(289) 272-0140",
+                        "URL": "http://www.theharewineco.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1552759353209",
+                        "Latitude": "43.1957071201368"
+                    },
+                    {
+                        "Name": "Sue-Ann Staff Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-1719",
+                        "URL": "https://www.sue-annstaff.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3554398922143",
+                        "Latitude": "43.1215910407994"
+                    },
+                    {
+                        "Name": "Colaneri Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 682-2100",
+                        "URL": "https://www.colaneriwines.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1370455535882",
+                        "Latitude": "43.1626352480545"
+                    },
+                    {
+                        "Name": "The Organized Crime Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-9802",
+                        "URL": "http://www.organizedcrimewinery.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4952533474584",
+                        "Latitude": "43.1553019888291"
+                    },
+                    {
+                        "Name": "Rennie Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-9463",
+                        "URL": "http://rennieestatewinery.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4371778299415",
+                        "Latitude": "43.1556939034482"
+                    },
+                    {
+                        "Name": "Malivoire Wine Company",
+                        "Municipality": "Lincoln",
+                        "Phone": "(866) 644-2244",
+                        "URL": "http://www.malivoire.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4371778299415",
+                        "Latitude": "43.1556939034482"
+                    },
+                    {
+                        "Name": "Between the Lines Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 262-0289",
+                        "URL": "http://www.betweenthelineswinery.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1021169510042",
+                        "Latitude": "43.1930364376869"
+                    },
+                    {
+                        "Name": "Coyote's Run Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 682-8310",
+                        "URL": "http://www.coyotesrunwinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1179203622208",
+                        "Latitude": "43.1709664678446"
+                    },
+                    {
+                        "Name": "Legends Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-6500",
+                        "URL": "http://www.legendsestates.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4794749266826",
+                        "Latitude": "43.1939032060967"
+                    },
+                    {
+                        "Name": "Ridgepoint Wines",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-8853",
+                        "URL": "http://www.ridgepointwines.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4159241950904",
+                        "Latitude": "43.1485580441125"
+                    },
+                    {
+                        "Name": "Royal Demaria Wines",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-1380�",
+                        "URL": "http://www.royaldemaria.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4125717357433",
+                        "Latitude": "43.1787670428471"
+                    },
+                    {
+                        "Name": "Redstone Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-9463",
+                        "URL": "http://redstonewines.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4377333246334",
+                        "Latitude": "43.1609241708138"
+                    },
+                    {
+                        "Name": "Joseph's Estate Wines",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-1259",
+                        "URL": "http://www.josephsestatewines.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1074434965406",
+                        "Latitude": "43.2321139322481"
+                    },
+                    {
+                        "Name": "Palatine Hills Estate",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 646-9617",
+                        "URL": "http://www.palatinehillsestatewinery.com/site/home",
+                        "FullAddress": "",
+                        "Longitude": "-79.1493759319395",
+                        "Latitude": "43.2414444329562"
+                    },
+                    {
+                        "Name": "PondView Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-0777",
+                        "URL": "http://www.pondviewwinery.com/site/home",
+                        "FullAddress": "",
+                        "Longitude": "-79.1018799633638",
+                        "Latitude": "43.2153635418728"
+                    },
+                    {
+                        "Name": "Andres Wines",
+                        "Municipality": "Grimsby",
+                        "Phone": "(905) 643-4131",
+                        "URL": "http://www.andrewpeller.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.6215865332685",
+                        "Latitude": "43.2108317530869"
+                    },
+                    {
+                        "Name": "Southbrook Vineyards",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 641-2548",
+                        "URL": "http://southbrook.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1615633722265",
+                        "Latitude": "43.1879744562326"
+                    },
+                    {
+                        "Name": "Peninsula Ridge Estates Winery Ltd.",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-0900",
+                        "URL": "http://www.peninsularidge.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.5091224346144",
+                        "Latitude": "43.176734506662"
+                    },
+                    {
+                        "Name": "Daniel Lenko Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-7756",
+                        "URL": "http://www.daniellenko.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.489585479028",
+                        "Latitude": "43.1681939579274"
+                    },
+                    {
+                        "Name": "Magnotta Winery Estates Ltd.",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-5313",
+                        "URL": "http://www.magnotta.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4761992592115",
+                        "Latitude": "43.1845848921241"
+                    },
+                    {
+                        "Name": "Vieni Estate Wine & Spirits",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-6521",
+                        "URL": "http://www.vieni.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4514367149915",
+                        "Latitude": "43.1350870976778"
+                    },
+                    {
+                        "Name": "Good Earth Vineyard & Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-6333",
+                        "URL": "https://goodearthfoodandwine.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4897704870922",
+                        "Latitude": "43.1766607372697"
+                    },
+                    {
+                        "Name": "Maleta Vineyards",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 685-8486",
+                        "URL": "http://www.maletawinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1598420963535",
+                        "Latitude": "43.1649852776835"
+                    },
+                    {
+                        "Name": "Rosewood Estates Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-4383",
+                        "URL": "http://www.rosewoodwine.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.5005590063207",
+                        "Latitude": "43.1661772177175"
+                    },
+                    {
+                        "Name": "Harbour Estates Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-6279",
+                        "URL": "http://www.hewwine.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3656211241581",
+                        "Latitude": "43.172703074588"
+                    },
+                    {
+                        "Name": "Cornerstone Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-6758",
+                        "URL": "http://www.cornerstonewinery.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4467465812171",
+                        "Latitude": "43.1697813872569"
+                    },
+                    {
+                        "Name": "Angels Gate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-3942",
+                        "URL": "http://www.angelsgatewinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4998762258008",
+                        "Latitude": "43.1639171089553"
+                    },
+                    {
+                        "Name": "Thirty Bench Wine Makers",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-1698",
+                        "URL": "http://www.thirtybench.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4931265577345",
+                        "Latitude": "43.1652691345494"
+                    },
+                    {
+                        "Name": "Hidden Bench Vineyards and Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-8700",
+                        "URL": "http://www.hiddenbench.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.493706415291",
+                        "Latitude": "43.1596939015493"
+                    },
+                    {
+                        "Name": "Back 10 Cellars",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-3365",
+                        "URL": "http://www.back10cellars.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.430146558128",
+                        "Latitude": "43.1608203031637"
+                    },
+                    {
+                        "Name": "Mountain Road Wine Company",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-0745",
+                        "URL": "http://www.mountainroadwine.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4794425410757",
+                        "Latitude": "43.1535621285903"
+                    },
+                    {
+                        "Name": "Maple Grove Vinoteca Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-7415",
+                        "URL": "",
+                        "FullAddress": "",
+                        "Longitude": "-79.4286356453138",
+                        "Latitude": "43.1895242079448"
+                    },
+                    {
+                        "Name": "Thirteenth Street Wine Company",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 954-8463",
+                        "URL": "http://www.13thstreetwines.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3362557238014",
+                        "Latitude": "43.1576922933925"
+                    },
+                    {
+                        "Name": "Mike Weir Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-1919",
+                        "URL": "https://www.mikeweirwine.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4889522592666",
+                        "Latitude": "43.1539582798028"
+                    },
+                    {
+                        "Name": "Cave Spring Cellars",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-3581",
+                        "URL": "http://www.cavespring.ca",
+                        "FullAddress": "",
+                        "Longitude": "-79.3703066239907",
+                        "Latitude": "43.1491778848753"
+                    },
+                    {
+                        "Name": "Megalomaniac ",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-5155",
+                        "URL": "http://www.megalomaniacwine.com/main.php",
+                        "FullAddress": "",
+                        "Longitude": "-79.4257284539728",
+                        "Latitude": "43.147973021163"
+                    },
+                    {
+                        "Name": "Aure Wines",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-7256",
+                        "URL": "http://www.aurewines.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.5042378455935",
+                        "Latitude": "43.1399318154264"
+                    },
+                    {
+                        "Name": "GreenLane Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-7207",
+                        "URL": "http://www.greenlanewinery.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4116243884631",
+                        "Latitude": "43.1593039627189"
+                    },
+                    {
+                        "Name": "De Sousa Wine Cellars",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-7269",
+                        "URL": "http://www.desousavineyards.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4564071669931",
+                        "Latitude": "43.1408272064305"
+                    },
+                    {
+                        "Name": "Domaine Queylus",
+                        "Municipality": "West Lincoln",
+                        "Phone": "(905) 562-7474",
+                        "URL": "http://www.queylus.com/contact/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4029200981069",
+                        "Latitude": "43.0797616076389"
+                    },
+                    {
+                        "Name": "Featherstone Estate Winery & Vineyard",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-1949",
+                        "URL": "http://www.featherstonewinery.ca",
+                        "FullAddress": "",
+                        "Longitude": "-79.3938939433254",
+                        "Latitude": "43.1393362681271"
+                    },
+                    {
+                        "Name": "Vineland Estates Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-7088",
+                        "URL": "http://www.vineland.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4034837591821",
+                        "Latitude": "43.1431624096866"
+                    },
+                    {
+                        "Name": "Stoney Ridge Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-1324",
+                        "URL": "http://www.stoneyridge.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3820941783272",
+                        "Latitude": "43.1498854899015"
+                    },
+                    {
+                        "Name": "Big Head Wines",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-4321",
+                        "URL": "http://www.bigheadwines.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1095530374064",
+                        "Latitude": "43.241153231414"
+                    },
+                    {
+                        "Name": "Alvento Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-1212",
+                        "URL": "http://www.alvento.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3760652368931",
+                        "Latitude": "43.1704205915669"
+                    },
+                    {
+                        "Name": "Kittling Ridge Wines & Spirits",
+                        "Municipality": "Grimsby",
+                        "Phone": "(905) 945-9225",
+                        "URL": "http://www.kittlingridge.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.5832627586662",
+                        "Latitude": "43.2028896913511"
+                    },
+                    {
+                        "Name": "Jackson-Triggs Niagara Estate",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-4637",
+                        "URL": "http://www.jacksontriggswinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.0915708465156",
+                        "Latitude": "43.2439160449122"
+                    },
+                    {
+                        "Name": "Creekside Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-0035",
+                        "URL": "http://www.creeksidewine.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3322837618756",
+                        "Latitude": "43.1517814660734"
+                    },
+                    {
+                        "Name": "Stratus Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-1806",
+                        "URL": "http://www.stratuswines.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.0958368329667",
+                        "Latitude": "43.2390347406752"
+                    },
+                    {
+                        "Name": "Domaine Vagners Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-7296",
+                        "URL": "http://domainevagners.com/about-the-winery/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1262649274933",
+                        "Latitude": "43.2363858061436"
+                    },
+                    {
+                        "Name": "Rancourt Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-2882",
+                        "URL": "http://www.rancourtwinery.com/EN/index.html",
+                        "FullAddress": "",
+                        "Longitude": "-79.1111915671208",
+                        "Latitude": "43.2359577513998"
+                    },
+                    {
+                        "Name": "13 Street Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 984-8463",
+                        "URL": "13thstreetwinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3154019674249",
+                        "Latitude": "43.1520743666662"
+                    },
+                    {
+                        "Name": "Pillitteri Estates Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-3147",
+                        "URL": "http://www.pillitteri.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1143409346499",
+                        "Latitude": "43.2308772091973"
+                    },
+                    {
+                        "Name": "Hernder Estate Wines",
+                        "Municipality": "St. Catharines",
+                        "Phone": "(905) 684-3300",
+                        "URL": "http://www.hernder.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3033275646625",
+                        "Latitude": "43.1221806907863"
+                    },
+                    {
+                        "Name": "Lailey Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-8188",
+                        "URL": "http://www.laileyvineyard.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.062510110903",
+                        "Latitude": "43.2316316163737"
+                    },
+                    {
+                        "Name": "Riverview Cellars",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 262-0636",
+                        "URL": "http://www.riverviewcellars.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.0591688294677",
+                        "Latitude": "43.2053721071959"
+                    },
+                    {
+                        "Name": "Henry of Pelham Family Estate Winery",
+                        "Municipality": "St. Catharines",
+                        "Phone": "(905) 684-8423",
+                        "URL": "http://www.henryofpelham.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.2986920786323",
+                        "Latitude": "43.1115764167442"
+                    },
+                    {
+                        "Name": "The Ice House Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(855) 331-6161",
+                        "URL": "http://www.theicehouse.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.0614179653716",
+                        "Latitude": "43.1774964451862"
+                    },
+                    {
+                        "Name": "Inniskillin Wines Inc.",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-2187",
+                        "URL": "http://www.inniskillin.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.0639928965179",
+                        "Latitude": "43.2108565328636"
+                    },
+                    {
+                        "Name": "Sunnybrook Farm Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-1122",
+                        "URL": "http://www.sunnybrookfarmwinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1199255273156",
+                        "Latitude": "43.2514991979041"
+                    },
+                    {
+                        "Name": "Frogpond Farm",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-1079",
+                        "URL": "http://www.frogpondfarm.ca",
+                        "FullAddress": "",
+                        "Longitude": "-79.0716322083872",
+                        "Latitude": "43.1989196530229"
+                    },
+                    {
+                        "Name": "Strewn Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-1229",
+                        "URL": "http://www.strewnwinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1261445776836",
+                        "Latitude": "43.251961449754"
+                    },
+                    {
+                        "Name": "Trius Winery at Hillebrand",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-7123",
+                        "URL": "http://www.triuswines.com/cms-trius/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1336141611939",
+                        "Latitude": "43.2114736611597"
+                    },
+                    {
+                        "Name": "Reimer Vineyards",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-9417",
+                        "URL": "http://www.reimervineyards.com/www.reimervineyards.com/Winery_Welcome.html",
+                        "FullAddress": "",
+                        "Longitude": "-79.0792172865633",
+                        "Latitude": "43.2094024062882"
+                    },
+                    {
+                        "Name": "Marynissen Estates",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-7270",
+                        "URL": "http://www.marynissen.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.0741459828561",
+                        "Latitude": "43.2050850334157"
+                    },
+                    {
+                        "Name": "Stonechurch Vineyards",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 935-3535",
+                        "URL": "http://www.stonechurch.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1748394066241",
+                        "Latitude": "43.2231244393806"
+                    },
+                    {
+                        "Name": "Small Talk Vineyards",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 935-3535",
+                        "URL": "http://smalltalkvineyards.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1748394066241",
+                        "Latitude": "43.2231244393806"
+                    },
+                    {
+                        "Name": "Harvest Estate Wines",
+                        "Municipality": "St. Catharines",
+                        "Phone": "(905) 682-0080",
+                        "URL": "http://www.harvestwines.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.2777480418721",
+                        "Latitude": "43.1562860553873"
+                    },
+                    {
+                        "Name": "NOMAD at Hinterbrook Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 646-9617",
+                        "URL": "http://hinterbrook.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1358515789949",
+                        "Latitude": "43.246717460405"
+                    },
+                    {
+                        "Name": "Konzelmann Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 935-2866",
+                        "URL": "http://www.konzelmann.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1430703219554",
+                        "Latitude": "43.2511570185812"
+                    },
+                    {
+                        "Name": "Chateau des Charmes",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 262-4219",
+                        "URL": "http://www.chateaudescharmes.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.1275267198265",
+                        "Latitude": "43.1557264182496"
+                    },
+                    {
+                        "Name": "Caroline Cellars",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-8814",
+                        "URL": "http://www.carolinecellars.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.096318443547",
+                        "Latitude": "43.2204036246862"
+                    },
+                    {
+                        "Name": "DiProfio Wines",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-7080",
+                        "URL": "http://www.diprofiowines.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3665074402782",
+                        "Latitude": "43.1592988991468"
+                    },
+                    {
+                        "Name": "Kew Vineyards Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-1539",
+                        "URL": "http://kewvineyards.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.4608929387603",
+                        "Latitude": "43.1570959992424"
+                    },
+                    {
+                        "Name": "Fielding Wines Ltd.",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 563-0668",
+                        "URL": "http://www.fieldingwines.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4954882861075",
+                        "Latitude": "43.1522435006016"
+                    },
+                    {
+                        "Name": "Reif Estate Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-7738",
+                        "URL": "http://www.reifwinery.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.0615643586557",
+                        "Latitude": "43.2175687120959"
+                    },
+                    {
+                        "Name": "Peller Estates Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 468-4678",
+                        "URL": "http://www.peller.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.0673032530602",
+                        "Latitude": "43.2385560640318"
+                    },
+                    {
+                        "Name": "Calamus Estate Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-9303",
+                        "URL": "http://www.calamuswines.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3794899721125",
+                        "Latitude": "43.127427094155"
+                    },
+                    {
+                        "Name": "Ravine Vineyard",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 262-8463",
+                        "URL": "https://www.ravinevineyard.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.1032981411155",
+                        "Latitude": "43.1604597807211"
+                    },
+                    {
+                        "Name": "Rockway Vineyards",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 641-1030",
+                        "URL": "http://www.rockwayglen.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3189597310312",
+                        "Latitude": "43.1259232838003"
+                    },
+                    {
+                        "Name": "Tawse Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-9500",
+                        "URL": "http://www.tawsewinery.ca",
+                        "FullAddress": "",
+                        "Longitude": "-79.4116428394584",
+                        "Latitude": "43.15147020248"
+                    },
+                    {
+                        "Name": "Niagara College Teaching Winery",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 641-2252",
+                        "URL": "http://www.niagaracollegewine.ca/",
+                        "FullAddress": "",
+                        "Longitude": "-79.166131971977",
+                        "Latitude": "43.1529301761875"
+                    },
+                    {
+                        "Name": "Kacaba Vineyards",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-5625",
+                        "URL": "http://www.kacaba.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.4013327361096",
+                        "Latitude": "43.1511464855422"
+                    },
+                    {
+                        "Name": "Foreign Affair Winery",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-9898",
+                        "URL": "http://foreignaffairwinery.com/",
+                        "FullAddress": "",
+                        "Longitude": "-79.3963208903082",
+                        "Latitude": "43.1908766178966"
+                    },
+                    {
+                        "Name": "Lakeview Wine Co.",
+                        "Municipality": "Niagara-on-the-Lake",
+                        "Phone": "(905) 685-5673",
+                        "URL": "https://www.lakeviewwineco.com/site/home",
+                        "FullAddress": "",
+                        "Longitude": "-79.1424916995733",
+                        "Latitude": "43.2052205895945"
+                    },
+                    {
+                        "Name": "16 Mile Cellar",
+                        "Municipality": "Lincoln",
+                        "Phone": "(905) 562-5225",
+                        "URL": "16milecellar.com",
+                        "FullAddress": "",
+                        "Longitude": "-79.3271193640708",
+                        "Latitude": "43.1392697305458"
+                    }
+                ];
+
+            });
+        </script>
+    </body>
+</html> 
+

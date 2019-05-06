@@ -1,0 +1,64 @@
+@media (min-width: 768px) {
+    #navContainer {
+        margin-bottom: 0;
+    }
+
+    #myMap {
+        float: left;
+    }
+
+    #containerDirections {
+        position: absolute;
+        width: auto;
+        height: auto;
+        max-height: 90vh;
+        background:rgba(255,255,255,0.8);
+        left: 0;
+        overflow-y: auto;
+    }
+    #containerReviews h4 {
+        text-align: center;
+        font-weight: bold;
+    }
+
+    #containerReviews {
+        position: absolute;
+        width: auto;
+        height: auto;
+        max-height: 90vh;
+        background:rgba(255,255,255,0.8);
+        left: 0;
+        overflow-y: auto;
+        visibility: hidden;
+    }
+    #displayReviews h4 {
+        text-align: center;
+        font-weight: bold;
+    }
+
+    #displayReviews{
+        position: absolute;
+        width: 200px;
+        height: auto;
+        max-height: 90vh;
+        background:rgba(255,255,255,0.8);
+        left: 0;
+        overflow-y: auto;
+        visibility: hidden;
+    }
+    #close{
+        height: auto;
+        width: 100%;
+        background-color: black;
+        color: white;
+    }
+    
+    #hidden {
+        visibility: hidden;
+    }
+    
+    .img-small {
+        width: 40px;
+    }
+}
+

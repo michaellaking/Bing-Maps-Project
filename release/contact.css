@@ -1,0 +1,7 @@
+#background {
+    min-height: 100vh;
+    background: url(imgs/background2.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
